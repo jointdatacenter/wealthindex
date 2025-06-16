@@ -1,6 +1,32 @@
-#####TESTS
+library(haven)
+library(forcats)
+library(sf)
+library(readxl)
+library(writexl)
+library(viridis)
+library(dplyr)
+library(tidyr)
+library(stringi)
+library(foreign)
+library(modelsummary)
+library(stargazer)
+library(broom)
+library(labelled)
+library(psych)
+library(factoextra)
+library(mice)
+library(fastDummies)
+library(gridExtra)
+library("unhcrthemes")
+import_lato()
+library(GPArotation)
+library(Hmisc)
+library(gt)
+library(webshot2)
 
+main <- read.csv("C:/Users/LEOPOLD/OneDrive - UNHCR/Work/DHS Wealth index/unhcr_ssd_2023_fds_data_v1_1/UNHCR_SSD_2023_FDS_data_main_v2.1.csv")
 
+###CHECK ASSETS ACROSS GROUPS (WHETHER THIS METHODOLOGY IS SUITABLE FOR YOUR DATASET)
 # Step 1: Identify asset variables
 asset_vars <- grep("^Assets01|^Assets02", names(main), value = TRUE)
 
