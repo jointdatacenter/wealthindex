@@ -225,3 +225,5 @@ main <- main %>%
   ))
 
 
+#save main
+write.csv(main, "C:/Users/LEOPOLD/OneDrive - UNHCR/Work/DHS Wealth index/main.csv", row.names = FALSE)
