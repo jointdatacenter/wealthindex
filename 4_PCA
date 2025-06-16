@@ -8,6 +8,7 @@ main_WI <- main %>%
     wgh_samp_resc_str,
     Intro_07_1,
     Region,
+    group,
     Improved_dw,             # Improved drinking water
 #    Improved_dw_final,      # Improved drinking water, <30 min
     electricity,            # Has electricity
@@ -118,35 +119,25 @@ str(main_WI)
 
 
 #remove variables with zero variation
-zero_sd_vars_main <- sapply(main_WI[ , 5:ncol(main_WI)], function(x) sd(x, na.rm = TRUE) == 0)
-removed_vars_main <- names(main_WI)[which(zero_sd_vars_main) + 4]  # +4 to account for starting at column 5
+zero_sd_vars_main <- sapply(main_WI[ , 6:ncol(main_WI)], function(x) sd(x, na.rm = TRUE) == 0)
+removed_vars_main <- names(main_WI)[which(zero_sd_vars_main) + 5]  # +5 to account for starting at column 5
 main_WI <- main_WI[ , !(names(main_WI) %in% removed_vars_main)]
 cat("Removed variables from main:", removed_vars_main, "\n")
 
 
 
 #PCA
-pca_main <- principal(main_WI[5:ncol(main_WI)], rotate = "varimax", cor = "mixed") 
+pca_main <- principal(main_WI[6:ncol(main_WI)], rotate = "varimax", cor = "mixed") 
 print(pca_main$loadings, cutoff = 0, sort=F)
 print(pca_main$scores)
 
-kmo_result <- KMO(main_WI[5:ncol(main_WI)])
+kmo_result <- KMO(main_WI[6:ncol(main_WI)])
 print(kmo_result)
 
 main_WI$scores <- pca_main$scores
 
 
 #Create quintiles based on wealth scores
-main_WI <- main_WI %>%
-  mutate(
-    group = case_when(
-      Intro_07_1 == 1 & Region == "South" ~ "Refugees South",
-      Intro_07_1 == 1 & Region == "North" ~ "Refugees North",
-      Intro_07_1 == 3 & Region == "North" ~ "Host Community North",
-      TRUE ~ NA_character_  # exclude others if needed
-    )
-  )
-
 main_WI <- main_WI %>%
   filter(!is.na(group), !is.na(scores)) %>%
   mutate(
