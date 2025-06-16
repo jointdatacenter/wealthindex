@@ -224,6 +224,16 @@ main <- main %>%
     ~ ifelse(. == 1, 1, ifelse(. %in% c(98, 99), NA, 0)) %>% replace_na(0)
   ))
 
+#create population groups of interest (in SSD: refugees in the south, refugees in the north and host community in the north)
+main <- main %>%
+  mutate(
+    group = case_when(
+      Intro_07_1 == 1 & Region == "South" ~ "Refugees South",
+      Intro_07_1 == 1 & Region == "North" ~ "Refugees North",
+      Intro_07_1 == 3 & Region == "North" ~ "Host Community North",
+      TRUE ~ NA_character_  # exclude others if needed
+    )
+  )
 
 #save main
 write.csv(main, "C:/Users/LEOPOLD/OneDrive - UNHCR/Work/DHS Wealth index/main.csv", row.names = FALSE)
