@@ -1,5 +1,6 @@
-#select all variables for final dataset:
+main <- read.csv("C:/Users/LEOPOLD/OneDrive - UNHCR/Work/DHS Wealth index/main.csv")
 
+#select all variables for final dataset
 main_WI <- main %>%
   select(
     # Core service access variables
