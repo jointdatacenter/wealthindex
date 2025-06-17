@@ -188,34 +188,9 @@ main <- main %>%
     Assets04g_1 = ifelse(Assets04g >= 1 & Assets04g <= 4, 1, 0),
     Assets04g_2 = ifelse(Assets04g >= 5 & Assets04g <= 9, 1, 0),
     Assets04g_3 = ifelse(Assets04g >= 10 & Assets04g != 99, 1, 0)
-  )
-main <- main %>%
-  set_variable_labels(
-    Assets04a_1 = "Cows/bulls: 1-4",
-    Assets04a_2 = "Cows/bulls: 5-9",
-    Assets04a_3 = "Cows/bulls: 10+",
-    Assets04b_1 = "Other cattle: 1-4",
-    Assets04b_2 = "Other cattle: 5-9",
-    Assets04b_3 = "Other cattle: 10+",
-    Assets04c_1 = "Horses/donkeys/mules: 1-4",
-    Assets04c_2 = "Horses/donkeys/mules: 5-9",
-    Assets04c_3 = "Horses/donkeys/mules: 10+",
-    Assets04d_1 = "Goats: 1-4",
-    Assets04d_2 = "Goats: 5-9",
-    Assets04d_3 = "Goats: 10+",
-    Assets04e_1 = "Sheep: 1-4",
-    Assets04e_2 = "Sheep: 5-9",
-    Assets04e_3 = "Sheep: 10+",
-    Assets04f_1 = "Barnyard animals: 1-4",
-    Assets04f_2 = "Barnyard animals: 5-9",
-    Assets04f_3 = "Barnyard animals: 10+",
-    Assets04g_1 = "Pigs: 1-4",
-    Assets04g_2 = "Pigs: 5-9",
-    Assets04g_3 = "Pigs: 10+"
-  )
-##drop original Asset04 variables
-main <- main %>%
+  )%>%
   select(-c(Assets04a, Assets04b, Assets04c, Assets04d, Assets04e, Assets04f, Assets04g, Assets03))
+
 
 #recode all other asset variables and bank account access into 0/1
 main <- main %>%
