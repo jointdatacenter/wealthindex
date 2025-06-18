@@ -20,7 +20,7 @@ main_WI <- main %>%
     group,
     urban_bin,
     Improved_dw,             # Improved drinking water
-    #    Improved_dw_final,      # Improved drinking water, <30 min
+    Improved_dw_final,      # Improved drinking water, <30 min
     electricity,            # Has electricity
     shared_san_facility,     # Shared toilet facility?
     Improved_san,            # Type of toilet facility
@@ -60,7 +60,7 @@ main_WI_urban <- main %>%
     group,
     urban_bin,
     Improved_dw,             # Improved drinking water
-    #    Improved_dw_final,      # Improved drinking water, <30 min
+    Improved_dw_final,      # Improved drinking water, <30 min
     electricity,            # Has electricity
     shared_san_facility,     # Shared toilet facility?
     Improved_san,            # Type of toilet facility
@@ -100,7 +100,7 @@ main_WI_rural <- main %>%
     group,
     urban_bin,
     Improved_dw,             # Improved drinking water
-    #    Improved_dw_final,      # Improved drinking water, <30 min
+    Improved_dw_final,      # Improved drinking water, <30 min
     electricity,            # Has electricity
     shared_san_facility,     # Shared toilet facility?
     Improved_san,            # Type of toilet facility
@@ -336,3 +336,11 @@ print(main_pca$loadings, cutoff = 0, sort=F)
 print(main_pca_urban$loadings, cutoff = 0, sort=F)
 print(main_pca_rural$loadings, cutoff = 0, sort=F)
 
+#only possible without the continuous var?? 
+kmo_data <- main_WI%>%
+  select(-c(agricultural_land_ha, comscore, rurscore, urbscore, combscore, q_combscore, wealth_quintile))
+str(kmo_data)
+kmo_result <- KMO(kmo_data[, 7:ncol(kmo_data)])
+print(kmo_result)
+
+ggsave("C:/Users/LEOPOLD/OneDrive - UNHCR/Work/DHS Wealth index/figures/quintiles.png", width = 6, height = 4, dpi = 300)
