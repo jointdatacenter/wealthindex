@@ -43,7 +43,24 @@ main <- main %>%
       BD01 %in% c(32, 42, 62, 81, 96) ~ 0,
       TRUE ~ NA_real_  # assigns NA if BD01 has a value not in either list
     ),
-    
+    Improved_dw_Loc = case_when(
+      BD01 %in% c(11, 12) ~ 1, #Assigns 1 if piped into dwelling/yard/plot
+      BD01 %in% c(13, 14, 21, 31, 41, 51) & BD01a %in% c(1, 2) ~ 1, #Assigns 1 if other source located in HH dwelling or plot
+      BD01 %in% c(13, 14, 21, 31, 41, 51) & BD01a == 3 ~ 0#Assigns 0 if other source located elsewhere
+    ),
+    Improved_dw_access = case_when(
+      BD01 %in% c(11, 12, 91, 92) ~ 1,  # Improved source: piped, bottled, sachets
+      BD01 %in% c(13, 14, 21, 31, 41, 51, 61, 71, 72) &
+        (
+          ((BD20_2_hours * 60 + BD20_2_minutes) < 30) | 
+            BD22 == 1
+        ) ~ 1,  # Other improved source reachable < 30 min OR water delivered to dwelling
+      TRUE ~ 0  # All others
+    ),
+    Improved_dw_final = case_when(
+      Improved_dw == 1 & (Improved_dw_Loc == 1 | Improved_dw_access == 1)~ 1, #Assigns 1 when an improved water source is located on premises or reachable in less than 30 min. 
+      TRUE ~ 0
+    ),
     Improved_san = case_when(
       SAN01 %in% c(11, 12, 13, 14, 18, 21, 22, 31) ~ 1,
       SAN01 %in% c(23, 41, 51, 95, 96) ~ 0,
