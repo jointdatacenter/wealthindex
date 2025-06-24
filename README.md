@@ -14,4 +14,4 @@ Standardized methodology for calculating wealth index in refugee/host settings u
 
 
 
-WI_PAK.R and WI_CMR.R calculate the index for the FDS in Pakistan and Cameroon (which have some variables pre-calculated, which makes the calculation much shorter.)
+(WI_PAK.R and WI_CMR.R calculate the index for the FDS in Pakistan and Cameroon (which have some variables pre-calculated, which makes the calculation much shorter.)
