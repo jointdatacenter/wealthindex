@@ -26,8 +26,7 @@ library(webshot2)
 
 main <- read.csv("C:/Users/LEOPOLD/OneDrive - UNHCR/Work/DHS Wealth index/unhcr_ssd_2023_fds_data_v1_1/UNHCR_SSD_2023_FDS_data_main_v2.1.csv")
 
-###CHECK ASSETS ACROSS GROUPS (WHETHER THIS METHODOLOGY IS SUITABLE FOR YOUR DATASET)
-#file: check.R
+###CHECK ASSETS ACROSS GROUPS BEFORE DOING ANY WI CALCULATION (file check.R)
 
 #DATA CLEANING
 region_map <- read_excel("C:/Users/LEOPOLD/OneDrive - UNHCR/Work/DHS Wealth index/regions.xlsx") 
