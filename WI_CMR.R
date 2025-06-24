@@ -301,6 +301,14 @@ main_pca <- psych::principal(
   scores = TRUE                 # return scores
 )
 
+#Common/Join PCA Quintiles
+main_WI <- main_WI %>%
+  filter(!is.na(comscore)) %>%
+  mutate(
+    wealth_quintile = ntile(comscore, 5),
+    wealth_quintile = factor(wealth_quintile, levels = 1:5, 
+                             labels = c("Poorest", "Second", "Middle", "Fourth", "Richest"))
+  )
 
 
 #using joint calculation & comparing refugees and host community
