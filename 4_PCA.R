@@ -243,13 +243,13 @@ main_WI <- main_WI %>%
   )
 
 main_WI<- main_WI[!is.na(main_WI$combscore), ]
+main_pca_SSD <- main_pca
 
 
 
 
 
-
-#IF RUNNING PCA JOINTLY FOR URBAN AND RURAL
+#using joint calculation & comparing refugees in north and south and host community
 main_WI %>%
   filter(group %in% c("Refugees South", "Refugees North", "Host Community North"),
          !is.na(wealth_quintile)) %>%
@@ -258,36 +258,21 @@ main_WI %>%
   geom_bar(position = "fill") +
   xlab("Group") +
   ylab("Percentage") +
-  ggtitle("Wealth Distribution by Group") +
+  ggtitle("Wealth Distribution FDS South Sudan") +
   scale_y_continuous(labels = scales::percent_format()) +
   scale_fill_unhcr_d(guide = guide_legend(reverse = TRUE)) +  # Reverse legend
   theme_unhcr() +
-  coord_flip()
-
-main_WI %>%
-  filter(Intro_07_1 %in% c(1, 3), !is.na(wealth_quintile)) %>%
-  mutate(
-    population_group = case_when(
-      Intro_07_1 == 1 ~ "Refugees",
-      Intro_07_1 == 3 ~ "Host Community"
-    )
-  ) %>%
-  mutate(wealth_quintile = fct_rev(wealth_quintile)) %>%  # Reverse order
-  ggplot(aes(x = population_group, fill = wealth_quintile)) +
-  geom_bar(position = "fill") +
-  xlab("Population Group") +
-  ylab("Percentage") +
-  ggtitle("Wealth Distribution: Refugees vs. Host Community") +
-  scale_y_continuous(labels = scales::percent_format()) +
-  scale_fill_unhcr_d(guide = guide_legend(reverse = TRUE)) +  # Reverse legend
-  theme_unhcr() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank())+
   coord_flip()
 
 
+ggsave("C:/Users/LEOPOLD/OneDrive - UNHCR/Work/DHS Wealth index/figures/quintiles_SSD.png", width = 6, height = 4, dpi = 300)
 
+
+
+#More Graphs: 
 #RUNNING URBAN/RURAL SEPARATELY
-
-
 main_WI %>%
   filter(group %in% c("Refugees South", "Refugees North", "Host Community North"),
          !is.na(q_combscore)) %>%
@@ -322,25 +307,3 @@ main_WI %>%
   theme_unhcr() +
   coord_flip()
 
-
-
-
-
-
-
-
-
-
-#Inspect loadings
-print(main_pca$loadings, cutoff = 0, sort=F)
-print(main_pca_urban$loadings, cutoff = 0, sort=F)
-print(main_pca_rural$loadings, cutoff = 0, sort=F)
-
-#only possible without the continuous var?? 
-kmo_data <- main_WI%>%
-  select(-c(agricultural_land_ha, comscore, rurscore, urbscore, combscore, q_combscore, wealth_quintile))
-str(kmo_data)
-kmo_result <- KMO(kmo_data[, 7:ncol(kmo_data)])
-print(kmo_result)
-
-ggsave("C:/Users/LEOPOLD/OneDrive - UNHCR/Work/DHS Wealth index/figures/quintiles.png", width = 6, height = 4, dpi = 300)
