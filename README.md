@@ -9,3 +9,9 @@ Standardized methodology for calculating wealth index in refugee/host settings u
 3. To create figures of the descriptive analysis - use 3_desc_figures.R 
 
 4. for calculation of the wealth index and plotting of the quintiles - run 4_PCA.R
+
+
+
+
+
+WI_PAK.R and WI_CMR.R calculate the index for the FDS in Pakistan and Cameroon (which have some variables pre-calculated, which makes the calculation much shorter.)
