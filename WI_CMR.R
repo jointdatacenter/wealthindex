@@ -290,19 +290,7 @@ cat("Removed variables from rural:", removed_vars_rural, "\n")
 
 
 
-#Remove variables that are not present in one group for all groups.
-#main_WI <- main_WI%>%
-#  select(-c(Assets01j, Assets01m, Assets01o, 
-#            Assets02f_b, Assets02g, Assets02h, Assets02i, 
-#            Assets04a_1, Assets04a_2, Assets04a_3, 
-#            Assets04b_2, Assets04b_3, Assets04c_1, Assets04c_2, 
-#            Assets04c_3, Assets04d_1, Assets04d_2, Assets04d_3, 
-#            Assets04e_2, Assets04e_3, Assets04f_2, Assets04g_1, Assets04g_2, Assets04g_3))
-
-
 ###WI is calculated by using PCA (principal component analysis)
-
-
 #calc combined PCA
 main_pca <- psych::principal(
   main_WI[, 7:ncol(main_WI)],        # select only binary variables
@@ -315,136 +303,24 @@ main_pca <- psych::principal(
 
 
 
-# Run PCA for urban dataset
-main_pca_urban <- psych::principal(
-  main_WI_urban[, 7:ncol(main_WI_urban)],        # select only binary variables
-  rotate = "varimax",           # optional rotation
-  nfactors = 1,                 # number of components
-  covar = TRUE,
-  cor = "tet",
-  scores = TRUE                 # return scores
-)
-
-# Run PCA for rural dataset
-main_pca_rural <- psych::principal(
-  main_WI_rural[, 7:ncol(main_WI_rural)],        # select only binary variables
-  rotate = "varimax",           # optional rotation
-  nfactors = 1,                 # number of components
-  covar = TRUE,                 # use covariance matrix (not correlation)
-  cor = "tet",
-  scores = TRUE                 # return scores
-)
-
-
-
-#Merge pca scores into main dataset
-main_WI$comscore <- main_pca$scores[,1]
-main_WI$urbscore <- NA
-main_WI$rurscore <- NA
-
-
-main_WI$urbscore[main_WI$urref_bin == 1] <- main_pca_urban$scores[, 1]
-main_WI$rurscore[main_WI$urref_bin == 0] <- main_pca_rural$scores[, 1]
-
-
-
-
-#Run Separate regressions to link urban/rural PCA scores to common pca score
-
-# Urban regression: comscore ~ urbscore
-urban_model <- lm(comscore ~ urbscore, data = main_WI, subset = urref_bin == 1)
-
-# Rural regression: comscore ~ rurscore
-rural_model <- lm(comscore ~ rurscore, data = main_WI, subset = urref_bin == 0)
-
-# Extract coefficients
-urb_const <- coef(urban_model)[1]
-urb_coeff <- coef(urban_model)[2]
-
-rur_const <- coef(rural_model)[1]
-rur_coeff <- coef(rural_model)[2]
-
-
-#Construct Combined Wealth index (combscore)
-main_WI$combscore <- NA
-main_WI$combscore[main_WI$urref_bin == 1] <- urb_const + urb_coeff * main_WI$urbscore[main_WI$urref_bin == 1]
-main_WI$combscore[main_WI$urref_bin == 0] <- rur_const + rur_coeff * main_WI$rurscore[main_WI$urref_bin == 0]
-
-#Combined/national quintiles
-main_WI <- main_WI %>%
-  filter(!is.na(combscore)) %>%
-  mutate(
-    q_combscore = ntile(combscore, 5),
-    q_combscore = factor(q_combscore, levels = 1:5,
-                         labels = c("Poorest", "Second", "Middle", "Fourth", "Richest"))
-  )
-
-#Common/Join PCA Quintiles
-main_WI <- main_WI %>%
-  filter(!is.na(comscore)) %>%
-  mutate(
-    wealth_quintile = ntile(comscore, 5),
-    wealth_quintile = factor(wealth_quintile, levels = 1:5, 
-                             labels = c("Poorest", "Second", "Middle", "Fourth", "Richest"))
-  )
-
-main_WI<- main_WI[!is.na(main_WI$combscore), ]
-
-
-###Create a ggplot group by regions
-main_WI %>%
-  filter(!is.na(q_combscore)) %>%
-  mutate(q_combscore = fct_rev(q_combscore)) %>%  # Reverse order
-  ggplot(aes(x = samp_strat, fill = q_combscore)) +
-  geom_bar(position = "fill") +
-  xlab("Province") +
-  ylab("Percentage") +
-  ggtitle("Wealth by Province") +
-  scale_y_continuous(labels = scales::percent_format()) +
-  scale_fill_unhcr_d(guide = guide_legend(reverse = TRUE)) +  # Use UNHCR color palette
-  theme_unhcr() +
-  coord_flip()
-
-
-main_WI %>%
-  filter(Intro_07 %in% c("Refugees", "Host Community"), !is.na(q_combscore)) %>%
-  mutate(q_combscore = fct_rev(q_combscore)) %>%  # Reverse order
-  ggplot(aes(x = Intro_07, fill = q_combscore)) +
-  geom_bar(position = "fill") +
-  xlab("Population Group") +
-  ylab("Percentage") +
-  ggtitle("Wealth Distribution: Refugees vs. Host Community") +
-  scale_y_continuous(labels = scales::percent_format()) +
-  scale_fill_unhcr_d(guide = guide_legend(reverse = TRUE)) +  # Use UNHCR color palette
-  theme_unhcr() +
-  coord_flip()
-
-
-
-
-#RUNNING PCA JOINTLY
-main_WI %>%
-  filter(!is.na(wealth_quintile)) %>%
-  mutate(wealth_quintile = fct_rev(wealth_quintile)) %>%  # Reverse order
-  ggplot(aes(x = samp_strat, fill = wealth_quintile)) +
-  geom_bar(position = "fill") +
-  xlab("Province") +
-  ylab("Percentage") +
-  ggtitle("Wealth by Province") +
-  scale_y_continuous(labels = scales::percent_format()) +
-  scale_fill_unhcr_d(guide = guide_legend(reverse = TRUE)) +  # Use UNHCR color palette
-  theme_unhcr() +
-  coord_flip()
-
+#using joint calculation & comparing refugees and host community
 main_WI %>%
   filter(Intro_07 %in% c("Refugees", "Host Community"), !is.na(wealth_quintile)) %>%
-  mutate(wealth_quintile = fct_rev(wealth_quintile)) %>%  # Reverse order
+  mutate(
+    wealth_quintile = fct_rev(wealth_quintile),  # Reverse order of quintiles
+    Intro_07 = factor(Intro_07, levels = c("Host Community", "Refugees"))  # Flip bar order
+  ) %>%
   ggplot(aes(x = Intro_07, fill = wealth_quintile)) +
   geom_bar(position = "fill") +
-  xlab("Population Group") +
-  ylab("Percentage") +
-  ggtitle("Wealth Distribution: Refugees vs. Host Community") +
+  ggtitle("Wealth Distribution FDS Cameroon") +
   scale_y_continuous(labels = scales::percent_format()) +
-  scale_fill_unhcr_d(guide = guide_legend(reverse = TRUE)) +  # Use UNHCR color palette
+  scale_fill_unhcr_d(guide = guide_legend(reverse = TRUE)) +
   theme_unhcr() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank()
+  ) +
   coord_flip()
+
+ggsave("C:/Users/LEOPOLD/OneDrive - UNHCR/Work/DHS Wealth index/figures/quintiles_CMR.png", width = 6, height = 3, dpi = 300)
+
