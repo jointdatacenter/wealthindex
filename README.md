@@ -4,7 +4,7 @@ Standardized methodology for calculating wealth index in refugee/host settings u
 
 1. To assess the suitability of this method for your data -  use 1_check.R file before any data cleaning
    
-2. Run 2_datacleaning.R file for data cleaning.
+2. Data cleaning - 2_datacleaning.R     (for FDS South Sudan, newer versions don't require the same level of data cleaning)  
 
 3. To create figures of the descriptive analysis - use 3_desc_figures.R 
 
