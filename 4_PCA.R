@@ -142,19 +142,6 @@ main_WI <- main_WI[ , !(names(main_WI) %in% removed_vars_main)]
 cat("Removed variables from main:", removed_vars_main, "\n")
 
 
-zero_sd_vars_urban <- sapply(main_WI_urban[ , 7:ncol(main_WI_urban)], function(x) sd(x, na.rm = TRUE) == 0)
-removed_vars_urban <- names(main_WI_urban)[which(zero_sd_vars_urban) + 6]  # +6 to account for starting at column 5
-main_WI_urban <- main_WI_urban[ , !(names(main_WI_urban) %in% removed_vars_urban)]
-cat("Removed variables from urban:", removed_vars_urban, "\n")
-
-
-zero_sd_vars_rural <- sapply(main_WI_rural[ , 7:ncol(main_WI_rural)], function(x) sd(x, na.rm = TRUE) == 0)
-removed_vars_rural <- names(main_WI_rural)[which(zero_sd_vars_rural) + 6]  # +6 to account for starting at column 5
-main_WI_rural <- main_WI_rural[ , !(names(main_WI_rural) %in% removed_vars_rural)]
-cat("Removed variables from rural:", removed_vars_rural, "\n")
-
-
-
 #PCA
 #calc combined PCA
 main_pca <- psych::principal(
@@ -165,6 +152,71 @@ main_pca <- psych::principal(
   cor = "mixed",
   scores = TRUE                 # return scores
 )
+
+
+#Merge pca scores into main dataset
+main_WI$comscore <- main_pca$scores[,1]
+
+#Inspect loadings 
+main_pca$loadings
+
+
+#Common/Join PCA Quintiles
+main_WI <- main_WI %>%
+  filter(!is.na(comscore)) %>%
+  mutate(
+    wealth_quintile = ntile(comscore, 5),
+    wealth_quintile = factor(wealth_quintile, levels = 1:5, 
+                             labels = c("Poorest", "Second", "Middle", "Fourth", "Richest"))
+  )
+
+main_WI<- main_WI[!is.na(main_WI$combscore), ]
+main_pca_SSD <- main_pca
+
+
+#using joint calculation & comparing refugees in north and south and host community
+main_WI %>%
+  filter(group %in% c("Refugees South", "Refugees North", "Host Community North"),
+         !is.na(wealth_quintile)) %>%
+  mutate(wealth_quintile = fct_rev(wealth_quintile)) %>%  # Reverse order
+  ggplot(aes(x = group, fill = wealth_quintile)) +
+  geom_bar(position = "fill") +
+  xlab("Group") +
+  ylab("Percentage") +
+  ggtitle("Wealth Distribution FDS South Sudan") +
+  scale_y_continuous(labels = scales::percent_format()) +
+  scale_fill_unhcr_d(guide = guide_legend(reverse = TRUE)) +  # Reverse legend
+  theme_unhcr() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank())+
+  coord_flip()
+
+
+ggsave("C:/Users/LEOPOLD/OneDrive - UNHCR/Work/DHS Wealth index/figures/quintiles_SSD.png", width = 6, height = 4, dpi = 300)
+
+
+
+
+
+
+
+
+
+
+
+
+
+#Sensitivity testing - calculation with urban and rural separately: 
+zero_sd_vars_urban <- sapply(main_WI_urban[ , 7:ncol(main_WI_urban)], function(x) sd(x, na.rm = TRUE) == 0)
+removed_vars_urban <- names(main_WI_urban)[which(zero_sd_vars_urban) + 6]  # +6 to account for starting at column 5
+main_WI_urban <- main_WI_urban[ , !(names(main_WI_urban) %in% removed_vars_urban)]
+cat("Removed variables from urban:", removed_vars_urban, "\n")
+
+
+zero_sd_vars_rural <- sapply(main_WI_rural[ , 7:ncol(main_WI_rural)], function(x) sd(x, na.rm = TRUE) == 0)
+removed_vars_rural <- names(main_WI_rural)[which(zero_sd_vars_rural) + 6]  # +6 to account for starting at column 5
+main_WI_rural <- main_WI_rural[ , !(names(main_WI_rural) %in% removed_vars_rural)]
+cat("Removed variables from rural:", removed_vars_rural, "\n")
 
 
 
@@ -190,8 +242,10 @@ main_pca_rural <- psych::principal(
 
 
 
+
+
+
 #Merge pca scores into main dataset
-main_WI$comscore <- main_pca$scores[,1]
 main_WI$urbscore <- NA
 main_WI$rurscore <- NA
 
@@ -233,31 +287,21 @@ main_WI <- main_WI %>%
                          labels = c("Poorest", "Second", "Middle", "Fourth", "Richest"))
   )
 
-#Common/Join PCA Quintiles
-main_WI <- main_WI %>%
-  filter(!is.na(comscore)) %>%
-  mutate(
-    wealth_quintile = ntile(comscore, 5),
-    wealth_quintile = factor(wealth_quintile, levels = 1:5, 
-                             labels = c("Poorest", "Second", "Middle", "Fourth", "Richest"))
-  )
-
-main_WI<- main_WI[!is.na(main_WI$combscore), ]
-main_pca_SSD <- main_pca
 
 
 
 
-
-#using joint calculation & comparing refugees in north and south and host community
 main_WI %>%
-  filter(group %in% c("Refugees South", "Refugees North", "Host Community North"),
-         !is.na(wealth_quintile)) %>%
+  filter(Intro_07_1 %in% c(1, 3), !is.na(wealth_quintile)) %>%
+  mutate(
+    population_group = case_when(
+      Intro_07_1 == 1 ~ "Refugees",
+      Intro_07_1 == 3 ~ "Host Community"
+    )
+  ) %>%
   mutate(wealth_quintile = fct_rev(wealth_quintile)) %>%  # Reverse order
-  ggplot(aes(x = group, fill = wealth_quintile)) +
+  ggplot(aes(x = population_group, fill = wealth_quintile)) +
   geom_bar(position = "fill") +
-  xlab("Group") +
-  ylab("Percentage") +
   ggtitle("Wealth Distribution FDS South Sudan") +
   scale_y_continuous(labels = scales::percent_format()) +
   scale_fill_unhcr_d(guide = guide_legend(reverse = TRUE)) +  # Reverse legend
@@ -267,12 +311,8 @@ main_WI %>%
   coord_flip()
 
 
-ggsave("C:/Users/LEOPOLD/OneDrive - UNHCR/Work/DHS Wealth index/figures/quintiles_SSD.png", width = 6, height = 4, dpi = 300)
 
-
-
-#More Graphs: 
-#RUNNING URBAN/RURAL SEPARATELY
+#Graphs if running urban and rural separately
 main_WI %>%
   filter(group %in% c("Refugees South", "Refugees North", "Host Community North"),
          !is.na(q_combscore)) %>%
@@ -306,4 +346,3 @@ main_WI %>%
   scale_fill_unhcr_d(guide = guide_legend(reverse = TRUE)) +  # Use UNHCR color palette
   theme_unhcr() +
   coord_flip()
-
