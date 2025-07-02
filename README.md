@@ -1,5 +1,5 @@
 # wealthindex
-Standardized methodology for calculating wealth index in refugee/host settings using Forced Displacement Surveys (FDS) 
+Standardized methodology for calculating an asset-based wealth index from refugee and host community survey data
 
 
 1. To assess the suitability of this method for your data -  use 1_check.R file before any data cleaning
