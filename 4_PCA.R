@@ -170,8 +170,6 @@ main_WI <- main_WI %>%
                              labels = c("Poorest", "Second", "Middle", "Fourth", "Richest"))
   )
 
-main_WI<- main_WI[!is.na(main_WI$combscore), ]
-main_pca_SSD <- main_pca
 
 
 #using joint calculation & comparing refugees in north and south and host community
