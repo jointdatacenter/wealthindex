@@ -170,6 +170,7 @@ main_WI <- main_WI %>%
                              labels = c("Poorest", "Second", "Middle", "Fourth", "Richest"))
   )
 
+write.csv(main_WI, "C:/Users/LEOPOLD/OneDrive - UNHCR/Work/DHS Wealth index/main_WI.csv", row.names = FALSE)
 
 
 #using joint calculation & comparing refugees in north and south and host community
