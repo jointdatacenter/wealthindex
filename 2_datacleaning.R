@@ -90,7 +90,7 @@ main <- main %>%
     ),
     #Crowding (more than 3 household members sleeping in one room)
     memsleep = ifelse(is.na(number_of_hhmembers) | is.na(HH14) | HH14 == 0, number_of_hhmembers/1, number_of_hhmembers / HH14),
-    crowding_cat = ifelse(memsleep > 3, 1, 0)
+    crowding_cat = ifelse(memsleep > 2, 1, 0)
   )
 
 #Land & House ownership - include depending on legal situation in country (do refugees have right to land ownership?)
