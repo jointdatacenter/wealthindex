@@ -2,11 +2,12 @@ main <- read.csv("C:/Users/LEOPOLD/OneDrive - UNHCR/Work/DHS Wealth index/main.c
 
 main <- main %>%
   mutate(
-    urban_bin = case_when(
-      Intro_09 == 3 ~ 1, 
+    incamp_bin = case_when(
+      Intro_08 == 1 ~ 1, 
       TRUE ~ 0))
 
-table(main$urban_bin)
+table(main$incamp_bin)
+
 
 
 #select all variables for final dataset
@@ -18,7 +19,7 @@ main_WI <- main %>%
     Intro_07_1,
     Region,
     group,
-    urban_bin,
+    incamp_bin,
     Improved_dw,             # Improved drinking water
     Improved_dw_final,      # Improved drinking water, <30 min
     electricity,            # Has electricity
@@ -49,8 +50,8 @@ main_WI <- main %>%
   )
 
 
-main_WI_urban <- main %>%
-  filter(urban_bin == 1) %>%
+main_WI_incamp <- main %>%
+  filter(incamp_bin == 1) %>%
   select(
     # Core service access variables
     ID,
@@ -58,7 +59,7 @@ main_WI_urban <- main %>%
     Intro_07_1,
     Region,
     group,
-    urban_bin,
+    incamp_bin,
     Improved_dw,             # Improved drinking water
     Improved_dw_final,      # Improved drinking water, <30 min
     electricity,            # Has electricity
@@ -89,8 +90,8 @@ main_WI_urban <- main %>%
   )
 
 
-main_WI_rural <- main %>%
-  filter(urban_bin == 0) %>%
+main_WI_outofcamp <- main %>%
+  filter(incamp_bin == 0) %>%
   select(
     # Core service access variables
     ID,
@@ -98,7 +99,7 @@ main_WI_rural <- main %>%
     Intro_07_1,
     Region,
     group,
-    urban_bin,
+    incamp_bin,
     Improved_dw,             # Improved drinking water
     Improved_dw_final,      # Improved drinking water, <30 min
     electricity,            # Has electricity
@@ -136,8 +137,8 @@ str(main_WI)
 
 
 #remove variables with zero variation
-zero_sd_vars_main <- sapply(main_WI[ , 7:ncol(main_WI)], function(x) sd(x, na.rm = TRUE) == 0)
-removed_vars_main <- names(main_WI)[which(zero_sd_vars_main) + 6]  # +5 to account for starting at column 5
+zero_sd_vars_main <- sapply(main_WI[ , 9:ncol(main_WI)], function(x) sd(x, na.rm = TRUE) == 0)
+removed_vars_main <- names(main_WI)[which(zero_sd_vars_main) + 8]  # +5 to account for starting at column 5
 main_WI <- main_WI[ , !(names(main_WI) %in% removed_vars_main)]
 cat("Removed variables from main:", removed_vars_main, "\n")
 
@@ -145,13 +146,15 @@ cat("Removed variables from main:", removed_vars_main, "\n")
 #PCA
 #calc combined PCA
 main_pca <- psych::principal(
-  main_WI[, 7:ncol(main_WI)],        # select only binary variables
+  main_WI[, 9:ncol(main_WI)],        # select only binary variables
   rotate = "varimax",           # optional rotation
   nfactors = 1,                 # number of components
   covar = TRUE,                 # use covariance matrix (not correlation)
   cor = "mixed",
   scores = TRUE                 # return scores
 )
+
+
 
 
 #Merge pca scores into main dataset
@@ -167,7 +170,7 @@ main_WI <- main_WI %>%
   mutate(
     wealth_quintile = ntile(comscore, 5),
     wealth_quintile = factor(wealth_quintile, levels = 1:5, 
-                             labels = c("Poorest", "Second", "Middle", "Fourth", "Richest"))
+                             labels = c("Poorest", "Quintile 2", "Quintile 3", "Quintile 4", "Richest"))
   )
 
 write.csv(main_WI, "C:/Users/LEOPOLD/OneDrive - UNHCR/Work/DHS Wealth index/main_WI.csv", row.names = FALSE)
@@ -190,10 +193,140 @@ main_WI %>%
         axis.title.y = element_blank())+
   coord_flip()
 
+main_WI %>%
+  filter(group %in% c("Refugees South", "Refugees North", "Host Community North"),
+         !is.na(wealth_quintile)) %>%
+  mutate(wealth_quintile = fct_rev(wealth_quintile)) %>%
+  group_by(group, wealth_quintile) %>%         # calculate counts
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(group) %>%
+  mutate(pct = n / sum(n)) %>%                 # compute percentages
+  ggplot(aes(x = group, y = pct, fill = wealth_quintile)) +
+  geom_bar(stat = "identity", position = "fill") +
+  geom_text(
+    data = . %>% filter(wealth_quintile == "Poorest"),
+    aes(label = scales::percent(pct, accuracy = 0.1)),
+    position = position_fill(vjust = 0.5),
+    color = "black",
+    size = 3.5
+  ) +
+  xlab("Group") +
+  ylab("Percentage") +
+  ggtitle("Wealth Distribution FDS South Sudan") +
+  scale_y_continuous(labels = scales::percent_format()) +
+  scale_fill_unhcr_d(guide = guide_legend(reverse = TRUE)) +
+  theme_unhcr() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  coord_flip()
+
+
+main_WI %>%
+  filter(group %in% c("Refugees South", "Refugees North", "Host Community North"),
+         !is.na(wealth_quintile), 
+         is.na(DH_11_years) | DH_11_years <= 2018) %>%
+  mutate(wealth_quintile = fct_rev(wealth_quintile)) %>%
+  group_by(group, wealth_quintile) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(group) %>%
+  mutate(pct = n / sum(n)) %>%
+  ggplot(aes(x = group, y = pct, fill = wealth_quintile)) +
+  geom_bar(stat = "identity", position = "fill") +
+  geom_text(
+    data = . %>% filter(wealth_quintile == "Poorest"),
+    aes(label = scales::percent(pct, accuracy = 0.1)),
+    position = position_fill(vjust = 0.5),
+    color = "black",
+    size = 3.5
+  ) +
+  xlab("Group") +
+  ylab("Percentage") +
+  ggtitle("Wealth Distribution FDS South Sudan") +
+  scale_y_continuous(labels = scales::percent_format()) +
+  scale_fill_unhcr_d(guide = guide_legend(reverse = TRUE)) +
+  theme_unhcr() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  coord_flip()
+
+
 
 ggsave("C:/Users/LEOPOLD/OneDrive - UNHCR/Work/DHS Wealth index/figures/quintiles_SSD.png", width = 6, height = 4, dpi = 300)
 
 
+#Graph for only households that have been in SSD longer (proxy: year HH left place of origin, use before 2018)
+main_WI %>%
+  filter(DH_11_years >= 2000, DH_11_years <= 2025) %>%
+  ggplot(aes(x = DH_11_years)) +
+  geom_histogram(
+    binwidth = 1,             # similar to breaks = 25 over 2000–2025
+    fill = "lightblue",
+    color = "white"
+  ) +
+  labs(
+    x = "",
+    y = "Households",
+    title = "Refugee households in South Sudan FDS - Year of displacement" ,
+    caption = "Note: Excludes 7 households with displacement before the year 2000."
+  ) +
+  theme_unhcr()+
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_line(color = "white"))
+
+ggsave("C:/Users/LEOPOLD/OneDrive - UNHCR/Work/DHS Wealth index/figures/displacementyear.png", width = 6, height = 4, dpi = 300)
+
+
+
+
+#quintile distribution if excluding the most recently displaced households: DH_11_years <= 2018
+#only excludes 69 HH
+main_WI %>%
+  filter(group %in% c("Refugees South", "Refugees North", "Host Community North"),
+         !is.na(wealth_quintile), 
+         is.na(DH_11_years) | DH_11_years <= 2018) %>%
+  mutate(wealth_quintile = fct_rev(wealth_quintile)) %>%  # Reverse order
+  ggplot(aes(x = group, fill = wealth_quintile)) +
+  geom_bar(position = "fill") +
+  xlab("Group") +
+  ylab("Percentage") +
+  ggtitle("Wealth Distribution FDS South Sudan") +
+  scale_y_continuous(labels = scales::percent_format()) +
+  scale_fill_unhcr_d(guide = guide_legend(reverse = TRUE)) +  # Reverse legend
+  theme_unhcr() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank())+
+  coord_flip()
+
+ggsave("C:/Users/LEOPOLD/OneDrive - UNHCR/Work/DHS Wealth index/figures/quintiles_SSD_exclnewref.png", width = 6, height = 4, dpi = 300)
+
+
+
+# filter out outliers
+main_WI %>%
+  #filter(comscore >= -2) %>%
+  filter(comscore >= -0.2 & comscore < 0.4) %>%
+  ggplot(aes(x = group, y = comscore, fill = group)) +
+  geom_violin(trim = FALSE, alpha = 0.8) +
+  geom_boxplot(width=0.1, fill="white", outlier.shape = NA)+
+  scale_fill_manual(
+    values = c(
+      "Refugees South" = "#0072BC", 
+      "Refugees North" = "#8EBEFF", 
+      "Host Community North" = "#18375F"
+    )
+  ) +
+ scale_x_discrete(limits = rev) + 
+  labs(
+    x = "",
+    y = "Wealth Index",
+    title = "Wealth Index Scores Distribution"
+  ) +
+  theme_unhcr() +
+  theme(
+    legend.position = "none"
+  )
+
+ggsave("C:/Users/LEOPOLD/OneDrive - UNHCR/Work/DHS Wealth index/figures/wi_distribution.png", width = 6, height = 4, dpi = 300)
 
 
 
@@ -204,24 +337,23 @@ ggsave("C:/Users/LEOPOLD/OneDrive - UNHCR/Work/DHS Wealth index/figures/quintile
 
 
 
-
-#Sensitivity testing - calculation with urban and rural separately: 
-zero_sd_vars_urban <- sapply(main_WI_urban[ , 7:ncol(main_WI_urban)], function(x) sd(x, na.rm = TRUE) == 0)
-removed_vars_urban <- names(main_WI_urban)[which(zero_sd_vars_urban) + 6]  # +6 to account for starting at column 5
-main_WI_urban <- main_WI_urban[ , !(names(main_WI_urban) %in% removed_vars_urban)]
-cat("Removed variables from urban:", removed_vars_urban, "\n")
-
-
-zero_sd_vars_rural <- sapply(main_WI_rural[ , 7:ncol(main_WI_rural)], function(x) sd(x, na.rm = TRUE) == 0)
-removed_vars_rural <- names(main_WI_rural)[which(zero_sd_vars_rural) + 6]  # +6 to account for starting at column 5
-main_WI_rural <- main_WI_rural[ , !(names(main_WI_rural) %in% removed_vars_rural)]
-cat("Removed variables from rural:", removed_vars_rural, "\n")
+#Sensitivity testing - calculation with incamp and outofcamp separately: 
+zero_sd_vars_incamp <- sapply(main_WI_incamp[ , 9:ncol(main_WI_incamp)], function(x) sd(x, na.rm = TRUE) == 0)
+removed_vars_incamp <- names(main_WI_incamp)[which(zero_sd_vars_incamp) + 8]  # +6 to account for starting at column 5
+main_WI_incamp <- main_WI_incamp[ , !(names(main_WI_incamp) %in% removed_vars_incamp)]
+cat("Removed variables from incamp:", removed_vars_incamp, "\n")
 
 
+zero_sd_vars_outofcamp <- sapply(main_WI_outofcamp[ , 9:ncol(main_WI_outofcamp)], function(x) sd(x, na.rm = TRUE) == 0)
+removed_vars_outofcamp <- names(main_WI_outofcamp)[which(zero_sd_vars_outofcamp) + 8]  # +6 to account for starting at column 5
+main_WI_outofcamp <- main_WI_outofcamp[ , !(names(main_WI_outofcamp) %in% removed_vars_outofcamp)]
+cat("Removed variables from outofcamp:", removed_vars_outofcamp, "\n")
 
-# Run PCA for urban dataset
-main_pca_urban <- psych::principal(
-  main_WI_urban[, 7:ncol(main_WI_urban)],        # select only binary variables
+
+
+# Run PCA for incamp dataset
+main_pca_incamp <- psych::principal(
+  main_WI_incamp[, 9:ncol(main_WI_incamp)],        # select only binary variables
   rotate = "varimax",           # optional rotation
   nfactors = 1,                 # number of components
   covar = TRUE,
@@ -229,9 +361,9 @@ main_pca_urban <- psych::principal(
   scores = TRUE                 # return scores
 )
 
-# Run PCA for rural dataset
-main_pca_rural <- psych::principal(
-  main_WI_rural[, 7:ncol(main_WI_rural)],        # select only binary variables
+# Run PCA for outofcamp dataset
+main_pca_outofcamp <- psych::principal(
+  main_WI_outofcamp[, 9:ncol(main_WI_outofcamp)],        # select only binary variables
   rotate = "varimax",           # optional rotation
   nfactors = 1,                 # number of components
   covar = TRUE,                 # use covariance matrix (not correlation)
@@ -249,31 +381,31 @@ main_WI$urbscore <- NA
 main_WI$rurscore <- NA
 
 
-main_WI$urbscore[main_WI$urban_bin == 1] <- main_pca_urban$scores[, 1]
-main_WI$rurscore[main_WI$urban_bin == 0] <- main_pca_rural$scores[, 1]
+main_WI$urbscore[main_WI$incamp_bin == 1] <- main_pca_incamp$scores[, 1]
+main_WI$rurscore[main_WI$incamp_bin == 0] <- main_pca_outofcamp$scores[, 1]
 
 
 
 
-#Run Separate regressions to link urban/rural PCA scores to common pca score
-# Urban regression: comscore ~ urbscore
-urban_model <- lm(comscore ~ urbscore, data = main_WI, subset = urban_bin == 1)
+#Run Separate regressions to link incamp/outofcamp PCA scores to common pca score
+# incamp regression: comscore ~ urbscore
+incamp_model <- lm(comscore ~ urbscore, data = main_WI, subset = incamp_bin == 1)
 
-# Rural regression: comscore ~ rurscore
-rural_model <- lm(comscore ~ rurscore, data = main_WI, subset = urban_bin == 0)
+# outofcamp regression: comscore ~ rurscore
+outofcamp_model <- lm(comscore ~ rurscore, data = main_WI, subset = incamp_bin == 0)
 
 # Extract coefficients
-urb_const <- coef(urban_model)[1]
-urb_coeff <- coef(urban_model)[2]
+urb_const <- coef(incamp_model)[1]
+urb_coeff <- coef(incamp_model)[2]
 
-rur_const <- coef(rural_model)[1]
-rur_coeff <- coef(rural_model)[2]
+rur_const <- coef(outofcamp_model)[1]
+rur_coeff <- coef(outofcamp_model)[2]
 
 
 #Construct Combined Wealth index (combscore)
 main_WI$combscore <- NA
-main_WI$combscore[main_WI$urban_bin == 1] <- urb_const + urb_coeff * main_WI$urbscore[main_WI$urban_bin == 1]
-main_WI$combscore[main_WI$urban_bin == 0] <- rur_const + rur_coeff * main_WI$rurscore[main_WI$urban_bin == 0]
+main_WI$combscore[main_WI$incamp_bin == 1] <- urb_const + urb_coeff * main_WI$urbscore[main_WI$incamp_bin == 1]
+main_WI$combscore[main_WI$incamp_bin == 0] <- rur_const + rur_coeff * main_WI$rurscore[main_WI$incamp_bin == 0]
 
 
 
@@ -289,7 +421,7 @@ main_WI <- main_WI %>%
 
 
 
-
+#Graph if running PCA together
 main_WI %>%
   filter(Intro_07_1 %in% c(1, 3), !is.na(wealth_quintile)) %>%
   mutate(
@@ -311,7 +443,19 @@ main_WI %>%
 
 
 
-#Graphs if running urban and rural separately
+
+
+
+
+
+
+
+
+
+
+
+
+#Graphs if running incamp and outofcamp separately
 main_WI %>%
   filter(group %in% c("Refugees South", "Refugees North", "Host Community North"),
          !is.na(q_combscore)) %>%
@@ -345,3 +489,13 @@ main_WI %>%
   scale_fill_unhcr_d(guide = guide_legend(reverse = TRUE)) +  # Use UNHCR color palette
   theme_unhcr() +
   coord_flip()
+                                 
+#Inspect loadings
+print(main_pca$loadings, cutoff = 0, sort=T)
+#print(main_pca_incamp$loadings, cutoff = 0, sort=F)
+#print(main_pca_outofcamp$loadings, cutoff = 0, sort=F)
+
+
+                                 
+
+
